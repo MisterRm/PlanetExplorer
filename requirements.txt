@@ -1,2 +1,7 @@
 flask
 gunicorn
+flask-socketio
+flask-session
+eventlet
+gevent
+sqlite3
