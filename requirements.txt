@@ -4,3 +4,4 @@ flask-socketio==5.3.4
 flask-session==0.4.0
 eventlet==0.33.0
 gevent==24.11.1
+dnspython==2.2.1
