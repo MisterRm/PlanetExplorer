@@ -1,1 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vider</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+        }
+        .video-card {
+            background: #1e1e1e;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .video-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 15px rgba(255, 255, 255, 0.2);
+        }
+        .card-body {
+            background: #222;
+            padding: 15px;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        }
+        footer {
+            background: #1a73e8;
+            padding: 15px;
+            color: white;
+            text-align: center;
+            margin-top: 30px;
+        }
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .page-link {
+            color: #ffffff;
+            background-color: #1a73e8;
+            border: none;
+        }
+        .page-link:hover {
+            background-color: #0d47a1;
+        }
+        .page-item.active .page-link {
+            background-color: #0d47a1;
+            border-color: #0d47a1;
+        }
+        /* Flash Message Styles */
+        .alert {
+            animation: fadeIn 1s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* Notifikasi */
+        #notification-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1050;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
 
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">Vider VID</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('index') }}">Home</a>
+                    </li>
+                    <!-- <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Admin</a>
+                    </li> -->
+                    <!-- Chatbot Button -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endwith %}
+    </div>
+
+    <!-- Notifikasi -->
+    <div id="notification-container"></div>
+
+    <!-- Header -->
+    <header class="text-center py-5">
+        <h1 class="display-4 fw-bold">Selamat Datang di Vider</h1>
+        <p class="lead">Nonton dan eksplorasi video menarik dari berbagai kategori</p>
+    </header>
+
+    <!-- Form Pencarian -->
+    <!-- Form Pencarian -->
+<div class="container my-4">
+    <form class="d-flex position-relative">
+        <input class="form-control me-2" type="search" id="searchBox" placeholder="Cari video..." autocomplete="off">
+        <button class="btn btn-primary" type="submit">Cari</button>
+        <div id="searchResults" class="dropdown-menu w-100 position-absolute"></div>
+    </form>
+</div>
+
+<button id="chat-button" class="btn btn-primary">💬 Chat Premium</button>
+
+<!-- Chatbot Container -->
+<div id="chat-container" class="d-none" style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 10px; width: 300px;">
+    <h5>🤖 Chatbot</h5>
+    <div id="chat-messages" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;"></div>
+    <button id="harga-premium" class="btn btn-outline-dark btn-sm">💰 Harga Premium</button>
+    <button id="cara-bayar" class="btn btn-outline-dark btn-sm">💳 Cara Bayar</button>
+    <button id="keuntungan-premium" class="btn btn-outline-dark btn-sm">✨ Keuntungan Premium</button>
+</div>
+
+    <!-- Daftar Video -->
+    <div class="container">
+        <div class="row">
+            {% if videos %}
+                {% for video in videos %}
+                <div class="col-md-6 mb-4">
+                    <div class="card video-card">
+                        <div class="ratio ratio-16x9">
+                            <iframe class="w-100" src="{{ video.embed_url }}" allowfullscreen></iframe>
+                        </div>
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-light">{{ video.title }}</h5>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center mt-4">Tidak ada video yang ditemukan.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="mb-0">© 2025 Vider. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Bootstrap Script -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    
+    <script>
+        var socket = io(); // Koneksi ke server WebSocket
+
+        socket.on('new_video', function(data) {
+            let notification = document.createElement('div');
+            notification.className = 'alert alert-success alert-dismissible fade show';
+            notification.innerHTML = `
+                <strong>🎉 Video Baru!</strong> ${data.title} telah ditambahkan silakan refresh website.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.getElementById('notification-container').appendChild(notification);
+
+            // Hapus notifikasi setelah 5 detik
+            setTimeout(() => {
+                notification.remove();
+            }, 40000);
+
+            // Tambahkan video baru ke halaman
+            let videoContainer = document.querySelector('.container .row');
+            let newVideo = document.createElement('div');
+            newVideo.className = 'col-md-6 mb-4';
+            newVideo.innerHTML = `
+                <div class="card video-card">
+                    <div class="ratio ratio-16x9">
+                        <iframe class="w-100" src="${data.embed_url}" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-light">${data.title}</h5>
+                    </div>
+                </div>
+            `;
+
+            // Tambahkan di awal daftar video
+            videoContainer.prepend(newVideo);
+        });
+    </script>
+    <!-- Tambahkan ini sebelum </body> -->
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+<!-- Tambahkan JS -->
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+
+</body>
+</html>
