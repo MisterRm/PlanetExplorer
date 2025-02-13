@@ -34,7 +34,7 @@ def init_db():
             embed_url TEXT NOT NULL
         );
         """)
-        db.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')")
+        db.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('koclok', 'ganteng222', 'admin')")
         db.commit()
 
 # Data chatbot dalam JSON
@@ -185,5 +185,4 @@ def handle_disconnect():
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         init_db()
-    port = int(os.environ.get("PORT", 8080))  # Gunakan port 8080
-    socketio.run(app, host="0.0.0.0", port=port, debug=True)
+    socketio.run(app, debug=True)
