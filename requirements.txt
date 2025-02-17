@@ -5,5 +5,4 @@ Flask-Session==0.4.0
 eventlet==0.33.0
 gevent==24.11.1
 dnspython==2.2.1
-python-socketio==5.8.0  # Diperlukan untuk Flask-SocketIO
-sqlite3==0.0.1          # Untuk database SQLite
+python-socketio==5.8.0
