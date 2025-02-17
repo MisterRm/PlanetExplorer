@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        /* Efek Glassmorphism untuk Sidebar */
+        .offcanvas {
+            backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0.7);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Navbar lebih modern */
+        .navbar {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #1a1a1a, #2c3e50);
+        }
+        /* Nama Pengguna */
+        .navbar .text-white {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        /* Tombol Logout */
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 75, 43, 0.6);
+        }
+        /* Efek Neon untuk Kartu Statistik */
+        .stat-card {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7), 0 0 20px rgba(0, 255, 255, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Efek Neon pada Teks */
+        .stat-card h5, .stat-card h2 {
+            color: #00ffff;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.8), 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+        /* Animasi Angka */
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        #visitorNumber {
+            animation: countUp 0.5s ease-out;
+        }
+        /* Efek Partikel di Latar Belakang */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.1), transparent);
+            animation: rotateParticles 10s linear infinite;
+            z-index: -1;
+        }
+        @keyframes rotateParticles {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* Tabel */
+        .table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-hover tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.3s ease;
+        }
+        /* Tombol Aksi */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+        /* Judul Video */
+        .video-title {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        /* Responsif untuk Mobile */
+        @media (max-width: 768px) {
+            .video-title {
+                max-width: 150px;
+            }
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        /* Efek Neon untuk Tabel */
+        .table th {
+            color: #00ffff;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.8), 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+        .table td {
+            color: #ffffff;
+        }
+        /* Tombol Tambah Video */
+        .btn-success {
+            background: linear-gradient(135deg, #00c853, #00e676);
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #00e676, #00c853);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.6);
+        }
+        /* Tombol Edit */
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.6);
+        }
+        /* Tombol Hapus */
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 75, 43, 0.6);
+        }
+        /* Efek Neon untuk Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00ffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .search-container input:focus {
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7), 0 0 20px rgba(0, 255, 255, 0.5);
+            outline: none;
+        }
+        .search-container i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00ffff;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        /* Efek Neon untuk Filter Select */
+        .filter-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .filter-container select {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #00ffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .filter-container select:focus {
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7), 0 0 20px rgba(0, 255, 255, 0.5);
+            outline: none;
+        }
+        .filter-container i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00ffff;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-dark text-white">
+    
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <!-- Brand Logo -->
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-crown"></i> <span class="fw-bold">Admin Panel</span>
+            </a>
+
+            <!-- Menu Kanan (Nama Pengguna dan Logout) -->
+            <div class="d-flex align-items-center">
+                <!-- Nama Pengguna -->
+                <span class="text-white me-3">
+                    <i class="fas fa-user-circle"></i> {{ session['username'] }}
+                </span>
+
+                <!-- Tombol Logout -->
+                <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="offcanvas offcanvas-start text-white" id="sidebar">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-cogs"></i> Admin Menu
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav flex-column">
+                <li class="nav-item"><a href="#" class="nav-link text-white"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="nav-item"><a href="{{ url_for('admin_dashboard') }}" class="nav-link text-white"><i class="fas fa-video"></i> Kelola Video</a></li>
+                <li class="nav-item"><a href="#" class="nav-link text-white"><i class="fas fa-user"></i> Pengguna</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <h2 class="fw-bold text-center"><i class="fas fa-tachometer-alt"></i> Dashboard Admin</h2>
+
+        <!-- Statistik Pengunjung -->
+        <div class="card stat-card text-white text-center p-3 mt-3">
+            <h5><i class="fas fa-users"></i> Jumlah Pengunjung Saat Ini</h5>
+            <h2 id="visitorCount">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="loadingSpinner"></span>
+                <span id="visitorNumber">0</span>
+            </h2>
+        </div>
+
+        <h3 class="mt-4"><i class="fas fa-video"></i> Daftar Video</h3>
+        <a href="{{ url_for('add_video') }}" class="btn btn-success mb-3"><i class="fas fa-plus"></i> Tambah Video</a>
+
+        <!-- Search dan Filter -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Cari judul video atau nomor...">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="filter-container">
+                    <select id="filterSelect" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="Tonton">Tonton</option>
+                        <option value="Edit">Edit</option>
+                    </select>
+                    <i class="fas fa-filter"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Video -->
+        <div class="table-responsive">
+            <table class="table table-dark table-hover border rounded">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Judul</th>
+                        <th>Embed URL</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for video in videos %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="video-title">{{ video.title }}</td>
+                        <td><a href="{{ video.embed_url }}" target="_blank" class="text-info">Tonton</a></td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{{ url_for('edit_video', video_id=video.id) }}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_video', video_id=video.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Hapus
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <script>
+        var socket = io();
+        function updateVisitorCount(count) {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            let visitorNumber = document.getElementById('visitorNumber');
+            visitorNumber.style.animation = 'none'; // Reset animasi
+            setTimeout(() => {
+                visitorNumber.innerText = count;
+                visitorNumber.style.animation = 'countUp 0.5s ease-out'; // Jalankan animasi
+            }, 10);
+        }
+        socket.on('update_visitor_count', function(data) {
+            updateVisitorCount(data.visitor_count);
+        });
+        fetch('/get_visitor_count')
+            .then(response => response.json())
+            .then(data => updateVisitorCount(data.visitor_count));
+    </script>
+    <!-- Script untuk pencarian dan filter -->
+    <script>
+        document.getElementById('searchInput').addEventListener('input', function() {
+            var searchValue = this.value.toLowerCase();
+            var rows = document.querySelectorAll('.table tbody tr');
+
+            rows.forEach(function(row) {
+                var title = row.querySelector('.video-title').innerText.toLowerCase();
+                var number = row.querySelector('td').innerText.toLowerCase();
+                if (title.includes(searchValue) || number.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('filterSelect').addEventListener('change', function() {
+            var filterValue = this.value;
+            var rows = document.querySelectorAll('.table tbody tr');
+
+            rows.forEach(function(row) {
+                var actions = row.querySelector('.action-buttons').innerText;
+                if (filterValue === "" || actions.includes(filterValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
