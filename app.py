@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_socketio import SocketIO, emit
-from flask import jsonify
 import sqlite3
 import os
+import time
+import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -11,14 +12,22 @@ app.secret_key = 'your_secret_key'
 DATABASE = 'database.db'
 
 # Inisialisasi SocketIO
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Simpan daftar pengunjung aktif { session_id: timestamp }
+active_users = {}
+
+# Timeout user dalam 30 detik jika tidak ada aktivitas
+USER_TIMEOUT = 30
 
 def get_db():
+    """Membuka koneksi ke database SQLite"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
+    """Inisialisasi database jika belum ada."""
     with get_db() as db:
         db.executescript("""
         CREATE TABLE IF NOT EXISTS users (
@@ -33,8 +42,21 @@ def init_db():
             title TEXT NOT NULL,
             embed_url TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS visitor_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT UNIQUE NOT NULL,
+            count INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS admin_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            username TEXT NOT NULL,
+            action TEXT NOT NULL
+        );
         """)
-        db.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('koclok', 'ganteng222', 'admin')")
+        db.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')")
         db.commit()
 
 # Data chatbot dalam JSON
@@ -52,33 +74,28 @@ def chatbot():
     response = chatbot_responses.get(message, chatbot_responses["default"])
     return jsonify({"response": response})
 
-# Route Index tanpa Pagination
 @app.route('/')
 def index():
-    query = request.args.get('q', '').strip()  # Ambil query pencarian
+    """Halaman utama dengan daftar video dan pencarian real-time"""
+    query = request.args.get('q', '').strip()
 
     with get_db() as db:
         if query:
             videos = db.execute(
-                "SELECT * FROM videos WHERE title LIKE ? ORDER BY id DESC", 
+                "SELECT * FROM videos WHERE title LIKE ? ORDER BY id DESC",
                 (f"%{query}%",)
             ).fetchall()
         else:
-            videos = db.execute(
-                "SELECT * FROM videos ORDER BY id DESC"
-            ).fetchall()
+            videos = db.execute("SELECT * FROM videos ORDER BY id DESC").fetchall()
 
-    return render_template(
-        'index.html',
-        videos=videos,
-        query=query  # Kirim query ke template
-    )
-    
+    return render_template('index.html', videos=videos, query=query)
+
 @app.route('/search_suggestions')
 def search_suggestions():
+    """Mengembalikan hasil pencarian real-time"""
     query = request.args.get('q', '').strip()
     if not query:
-        return jsonify([])  # Jika kosong, kirim array kosong
+        return jsonify([])
 
     with get_db() as db:
         videos = db.execute(
@@ -90,17 +107,24 @@ def search_suggestions():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login admin"""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+
         with get_db() as db:
             user = db.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
-        
+
         if user:
             session['logged_in'] = True
             session['username'] = user['username']
             session['role'] = user['role']
+
+            with get_db() as db:
+                db.execute("INSERT INTO admin_logs (timestamp, username, action) VALUES (?, ?, ?)",
+                           (datetime.datetime.now(), user['username'], "Login"))
+                db.commit()
+
             flash("Selamat datang, " + user['username'], "success")
             return redirect(url_for('admin_dashboard'))
         else:
@@ -110,22 +134,31 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logout admin"""
+    if 'username' in session:
+        with get_db() as db:
+            db.execute("INSERT INTO admin_logs (timestamp, username, action) VALUES (?, ?, ?)",
+                       (datetime.datetime.now(), session['username'], "Logout"))
+            db.commit()
+
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/kontol')
+@app.route('/admin')
 def admin_dashboard():
+    """Halaman admin"""
     if 'logged_in' not in session or session.get('role') != 'admin':
         flash("Akses ditolak", "danger")
         return redirect(url_for('login'))
-    
+
     with get_db() as db:
         videos = db.execute("SELECT * FROM videos ORDER BY id DESC").fetchall()
-    
-    return render_template('kontol.html', videos=videos)
+
+    return render_template('admin.html', videos=videos)
 
 @app.route('/add_video', methods=['GET', 'POST'])
 def add_video():
+    """Menambahkan video baru (admin)"""
     if 'logged_in' not in session or session.get('role') != 'admin':
         flash("Akses ditolak", "danger")
         return redirect(url_for('login'))
@@ -138,31 +171,35 @@ def add_video():
             db.execute("INSERT INTO videos (title, embed_url) VALUES (?, ?)", (title, embed_url))
             db.commit()
 
-        # Emit notifikasi ke semua client yang terhubung
         socketio.emit('new_video', {'title': title, 'embed_url': embed_url})
-
         return redirect(url_for('admin_dashboard'))
 
     return render_template('add_video.html')
 
-@app.route('/search', methods=['GET'])
-def search():
-    query = request.args.get('q', '').strip()  # Ambil input pencarian
+@app.route('/edit_video/<int:video_id>', methods=['GET', 'POST'])
+def edit_video(video_id):
+    """Mengedit video (admin)"""
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        flash("Akses ditolak", "danger")
+        return redirect(url_for('login'))
 
     with get_db() as db:
-        videos = db.execute(
-            "SELECT * FROM videos WHERE title LIKE ? ORDER BY id DESC",
-            (f"%{query}%",)
-        ).fetchall()
+        video = db.execute("SELECT * FROM videos WHERE id = ?", (video_id,)).fetchone()
 
-    return render_template(
-        'index.html',
-        videos=videos,
-        query=query
-    )
+    if request.method == 'POST':
+        title = request.form['title']
+        embed_url = request.form['embed_url']
+        with get_db() as db:
+            db.execute("UPDATE videos SET title = ?, embed_url = ? WHERE id = ?", (title, embed_url, video_id))
+            db.commit()
+        flash("Video berhasil diperbarui!", "success")
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('edit_video.html', video=video)
 
 @app.route('/delete_video/<int:video_id>', methods=['POST'])
 def delete_video(video_id):
+    """Menghapus video dari database"""
     if 'logged_in' not in session or session.get('role') != 'admin':
         flash("Akses ditolak", "danger")
         return redirect(url_for('login'))
@@ -171,18 +208,72 @@ def delete_video(video_id):
         db.execute("DELETE FROM videos WHERE id = ?", (video_id,))
         db.commit()
 
+    flash("Video berhasil dihapus!", "success")
     return redirect(url_for('admin_dashboard'))
 
-# Route untuk menangani notifikasi real-time
+@app.route('/get_visitor_count')
+def get_visitor_count():
+    """Mengembalikan jumlah pengunjung aktif"""
+    return jsonify({'visitor_count': len(active_users)})
+
+@app.route('/admin_stats')
+def admin_stats():
+    """Mengambil statistik pengunjung untuk ditampilkan di grafik"""
+    with get_db() as db:
+        stats = db.execute("SELECT date, count FROM visitor_stats ORDER BY date DESC LIMIT 7").fetchall()
+    return jsonify({'data': [{'date': s['date'], 'count': s['count']} for s in stats]})
+
+@app.route('/admin_logs')
+def admin_logs():
+    """Mengambil log aktivitas admin"""
+    with get_db() as db:
+        logs = db.execute("SELECT * FROM admin_logs ORDER BY timestamp DESC LIMIT 10").fetchall()
+    return jsonify({'logs': [{'timestamp': l['timestamp'], 'username': l['username'], 'action': l['action']} for l in logs]})
+
+def update_visitor_stats():
+    """Menyimpan jumlah pengunjung harian ke database"""
+    today = datetime.date.today().strftime('%Y-%m-%d')
+
+    with get_db() as db:
+        db.execute("INSERT INTO visitor_stats (date, count) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET count = count + 1", (today,))
+        db.commit()
+
 @socketio.on('connect')
 def handle_connect():
-    print("A client has connected.")
+    """Menangani koneksi pengguna baru"""
+    session_id = request.sid  
+    active_users[session_id] = time.time()
+    update_visitor_stats()
+    update_active_users()
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print("A client has disconnected.")
+    """Menangani pemutusan koneksi pengguna"""
+    session_id = request.sid
+    if session_id in active_users:
+        del active_users[session_id]
+    update_active_users()
+
+def update_active_users():
+    """Mengirim jumlah pengunjung aktif ke semua klien"""
+    socketio.emit('update_visitor_count', {'visitor_count': len(active_users)})
+
+def remove_inactive_users():
+    """Menghapus pengguna yang tidak aktif setelah timeout"""
+    while True:
+        current_time = time.time()
+        inactive_users = [sid for sid, last_active in active_users.items() if current_time - last_active > USER_TIMEOUT]
+
+        for sid in inactive_users:
+            del active_users[sid]
+
+        update_active_users()
+        socketio.sleep(USER_TIMEOUT)
+
+socketio.start_background_task(remove_inactive_users)
 
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         init_db()
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 8080))  # Gunakan port 8080
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)
