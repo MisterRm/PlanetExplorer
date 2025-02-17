@@ -107,27 +107,29 @@ def search_suggestions():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login admin"""
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
+        print(f"Username: {username}, Password: {password}")  # Debugging
 
         with get_db() as db:
-            user = db.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+            try:
+                user = db.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
+                print(f"User: {user}")  # Debugging
+            except sqlite3.OperationalError as e:
+                print(f"Database error: {e}")  # Debugging
+                flash("Terjadi kesalahan pada database. Silakan coba lagi.", "danger")
+                return redirect(url_for('login'))
 
         if user:
             session['logged_in'] = True
             session['username'] = user['username']
             session['role'] = user['role']
-
-            with get_db() as db:
-                db.execute("INSERT INTO admin_logs (timestamp, username, action) VALUES (?, ?, ?)",
-                           (datetime.datetime.now(), user['username'], "Login"))
-                db.commit()
-
+            print("Login berhasil!")  # Debugging
             flash("Selamat datang, " + user['username'], "success")
             return redirect(url_for('admin_dashboard'))
         else:
+            print("Login gagal!")  # Debugging
             flash("Username atau password salah", "danger")
 
     return render_template('login.html')
