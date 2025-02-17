@@ -1,7 +1,7 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    /* user-select: none; */
+    user-select: none;
 }
 
 .video-card {
@@ -40,6 +40,30 @@ footer {
     background: #0056b3;
 }
 
+.ton a {
+    color: white !important; /* Warna lebih kontras */
+    font-weight: bold;
+    padding: 5px 10px;
+    background: #007bff; /* Biru Bootstrap */
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.ton a:hover {
+    background: #0056b3; /* Biru lebih gelap saat hover */
+    transform: scale(1.05);
+}
+    
+.text-info {
+  display: flex;
+  padding: 5px;
+  background: black;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
 .table-hover tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
@@ -60,7 +84,7 @@ footer {
 
 #chat-container {
     position: fixed;
-    bottom: 90px !important; /* Paksa posisi lebih tinggi */
+    bottom: 70px !important; /* Paksa posisi lebih tinggi */
     right: 20px;
     width: 300px;
     background: white;
@@ -69,6 +93,7 @@ footer {
     padding: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     z-index: 9999;
+    /* border-color: #2cff2c; */
 }
 
 #chat-button {
@@ -108,5 +133,144 @@ footer {
     background: white; /* Biar kontras */
     padding: 10px;
     border-radius: 5px;
+}
+
+.visitor-counter {
+    display: flex;
+    align-items: center;
+    background: #1E1E2F;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    max-width: 320px;
+    margin: auto;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.visitor-counter:hover {
+    transform: scale(1.05);
+}
+
+.visitor-icon {
+    background: linear-gradient(135deg, #2cff2c, #2E7D32);
+    padding: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.visitor-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+.visitor-text p {
+    margin: 0;
+    font-size: 14px;
+    color: #bbb;
+}
+
+.visitor-text h2 {
+    margin: 5px 0 0;
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Sidebar */
+#sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: #007bff;
+    padding-top: 20px;
+    transition: all 0.3s;
+}
+
+#sidebar .nav-link {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    transition: 0.3s;
+}
+
+#sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#main-content {
+    margin-left: 250px;
+    padding: 20px;
+}
+
+/* Mode Gelap */
+.dark-mode {
+    background: #121212;
+    color: white;
+}
+
+.dark-mode .card {
+    background: #1e1e1e;
+    color: white;
+}
+
+/* Animasi Halus */
+body {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Notifikasi */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    display: none;
+}
+
+.sidebar-toggle {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1050; /* Pastikan tombol berada di atas elemen lain */
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 40px;
+    border-radius: 10px 10px 0 0;
+    transition: 0.3s;
+}
+
+footer a {
+    color: #ffcc00;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+footer a:hover {
+    color: #ffffff;
+    text-decoration: underline;
 }
 
