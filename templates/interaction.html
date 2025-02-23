@@ -1,1 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaction With 4Dayy</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
+        body {
+            background: linear-gradient(135deg, #6EE7B7, #3B82F6);
+            font-family: 'Poppins', sans-serif;
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+        .chat-bubble {
+            max-width: 70%;
+            padding: 1.2rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            position: relative;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .user-bubble {
+            background: #3B82F6;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .bot-bubble {
+            background: #f3f4f6;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .button-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .button-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modern-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #3B82F6, #6EE7B7);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .modern-button:hover {
+            background: linear-gradient(135deg, #6EE7B7, #3B82F6);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .modern-button i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="glassmorphism w-full max-w-2xl animate__animated animate__fadeIn">
+        <h1 class="text-3xl font-semibold text-gray-800 mb-6 text-center">💬 Chat dengan AI</h1>
+
+        <!-- Respons Bot -->
+        {% if bot_response %}
+            <div class="flex flex-col space-y-4">
+                <div class="chat-bubble bot-bubble">
+                    <h3 class="text-lg font-semibold">🤖 4Dayy:</h3>
+                    <p class="text-lg">{{ bot_response }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Input Teks untuk Merespons AI -->
+        {% if session.get('last_question') %}
+            <form action="/interaction" method="POST" class="space-y-4 mt-6">
+                <label for="user_input" class="block text-gray-700 text-lg font-semibold">Balas AI:</label>
+                <input type="text" id="user_input" name="user_input" required 
+                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <button type="submit" class="w-full modern-button">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Kirim</span>
+                </button>
+            </form>
+        {% else %}
+            <!-- Tombol Pilihan -->
+            <form action="/interaction" method="POST" class="space-y-4 mt-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="submit" name="user_choice" value="nama" class="modern-button">
+                        <i class="fas fa-user"></i>
+                        <span>Siapa 4Dayy?</span>
+                    </button>
+                    <button type="submit" name="user_choice" value="kabar" class="modern-button">
+                        <i class="fas fa-smile"></i>
+                        <span>Apa kabar?</span>
+                    </button>
+                    <button type="submit" name="user_choice" value="hobi" class="modern-button">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Hobi kamu?</span>
+                    </button>
+                    <button type="submit" name="user_choice" value="tentang" class="modern-button">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Tentang kamu</span>
+                    </button>
+                    <button type="submit" name="user_choice" value="bye" class="modern-button col-span-2">
+                        <i class="fas fa-hand-wave"></i>
+                        <span>Bye 👋</span>
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+
+    </div>
+</body>
+</html>
