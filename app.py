@@ -9,7 +9,7 @@ app.secret_key = '4Dayy'  # Kunci rahasia untuk session
 CHAT_HISTORY_PATH = os.path.join('data', 'chat_history.txt')
 
 # Daftar kata-kata kotor yang ingin diblokir
-BLOCKED_WORDS = ["kotor", "sakit", "jelek", "bodoh", "anjing", "bangsat", "kontol", "memek", "jancok", "asu", "bajingan", "telaso", "tolol", "monyet", "brengsek"]  # Tambahkan kata-kata lain sesuai kebutuhan
+BLOCKED_WORDS = ["kotor", "sakit", "jelek", "bodoh", "anjing", "bangsat", "kontol", "memek", "jancok", "asu", "bajingan", "telaso", "tolol", "monyet", "brengsek", "ngewe"]
 
 # Fungsi untuk menyimpan riwayat interaksi
 def save_chat_history(user_name, user_input, bot_response):
@@ -73,7 +73,7 @@ def interaction():
             session['last_question'] = None
         else:
             if user_choice == "nama":
-                bot_response = f"Hai, {user_name}! Nama gw Ramdan Hidayah panggil aja Dayy. Seneng banget kenalan sama lu!"
+                bot_response = f"Hai, {user_name}! Nama gw Dayy. Seneng banget kenalan sama lu!"
             elif user_choice == "kabar":
                 bot_response = "Gue baik-baik aja, nih! Lo gimana? Hari ini seru ga?"
                 session['last_question'] = "kabar"
@@ -83,7 +83,7 @@ def interaction():
             elif user_choice == "tentang":
                 bot_response = "Gw tuh AI yang dibuat khusus buat nemenin lu. Gw di sini buat bantu lu atau sekadar ngobrol santai. Ada yang bisa gue bantu?"
             elif user_choice == "bye":
-                bot_response = f"Yah, udah mau pergi aja nih? Okay deh, {user_name}! Jangan lupa balik lagi ya. Gue tunggu! "
+                bot_response = f"Yah, udah mau pergi aja nih? Okay deh, {user_name}! Jangan lupa balik lagi ya. Gue tunggu!"
             else:
                 bot_response = "Waduh, gue ga ngerti nih. Coba pilih opsi lain, dong!"
 
@@ -100,6 +100,39 @@ def interaction():
         user_name = session.get('user_name', 'Tamu')
         chat_history = load_chat_history()
         return render_template('interaction.html', user_name=user_name, chat_history=chat_history)
+
+# Route untuk halaman admin
+@app.route('/admin')
+def admin():
+    # Autentikasi sederhana
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    # Muat riwayat interaksi
+    chat_history = load_chat_history()
+    return render_template('admin.html', chat_history=chat_history)
+
+# Route untuk login admin
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Autentikasi sederhana
+        if username == 'kontol' and password == 'bapuk22':
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            return "Login gagal. Coba lagi."
+    
+    return render_template('admin_login.html')
+
+# Route untuk logout admin
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('index'))
 
 # Jalankan aplikasi
 if __name__ == '__main__':
