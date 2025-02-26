@@ -5,11 +5,9 @@ import datetime
 app = Flask(__name__)
 app.secret_key = '4Dayy'  # Kunci rahasia untuk session
 
-# Path untuk menyimpan riwayat interaksi
+# Path untuk menyimpan riwayat interaksi dan kata kotor
 CHAT_HISTORY_PATH = os.path.join('data', 'chat_history.txt')
-
-# Daftar kata-kata kotor yang ingin diblokir
-BLOCKED_WORDS = ["kotor", "sakit", "jelek", "bodoh", "anjing", "bangsat", "kontol", "memek", "jancok", "asu", "bajingan", "telaso", "tolol", "monyet", "brengsek", "ngewe"]
+BLOCKED_WORDS_PATH = os.path.join('data', 'blocked_words.txt')
 
 # Fungsi untuk menyimpan riwayat interaksi
 def save_chat_history(user_name, user_input, bot_response):
@@ -18,18 +16,37 @@ def save_chat_history(user_name, user_input, bot_response):
         file.write(f"{timestamp} - {user_name}: {user_input}\n")
         file.write(f"{timestamp} - AI: {bot_response}\n\n")
 
-# Fungsi untuk membaca riwayat interaksi
+# Fungsi untuk membaca daftar kata kotor
+def load_blocked_words():
+    if os.path.exists(BLOCKED_WORDS_PATH):
+        with open(BLOCKED_WORDS_PATH, 'r') as file:
+            return file.read().splitlines()
+    return []
+
+# Fungsi untuk menyimpan daftar kata kotor
+def save_blocked_words(words):
+    with open(BLOCKED_WORDS_PATH, 'w') as file:
+        for word in words:
+            file.write(f"{word}\n")
+
+# Fungsi untuk membaca riwayat chat
 def load_chat_history():
     if os.path.exists(CHAT_HISTORY_PATH):
         with open(CHAT_HISTORY_PATH, 'r') as file:
             return file.read()
     return "Riwayat interaksi kosong."
 
+# Fungsi untuk menghapus riwayat chat
+def clear_chat_history():
+    with open(CHAT_HISTORY_PATH, 'w') as file:
+        file.write("")
+
 # Fungsi untuk memeriksa apakah input mengandung kata kotor
 def contains_blocked_words(text):
+    blocked_words = load_blocked_words()
     text = text.lower()
-    for word in BLOCKED_WORDS:
-        if word in text:
+    for word in blocked_words:
+        if word.lower() in text:
             return True
     return False
 
@@ -104,13 +121,47 @@ def interaction():
 # Route untuk halaman admin
 @app.route('/admin')
 def admin():
-    # Autentikasi sederhana
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
     
-    # Muat riwayat interaksi
+    blocked_words = load_blocked_words()
     chat_history = load_chat_history()
-    return render_template('admin.html', chat_history=chat_history)
+    return render_template('admin.html', blocked_words=blocked_words, chat_history=chat_history)
+
+# Route untuk menambah kata kotor
+@app.route('/add_blocked_word', methods=['POST'])
+def add_blocked_word():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    new_word = request.form.get('blocked_word')
+    if new_word:
+        blocked_words = load_blocked_words()
+        if new_word not in blocked_words:
+            blocked_words.append(new_word)
+            save_blocked_words(blocked_words)
+    return redirect(url_for('admin'))
+
+# Route untuk menghapus kata kotor
+@app.route('/delete_blocked_word/<word>')
+def delete_blocked_word(word):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    blocked_words = load_blocked_words()
+    if word in blocked_words:
+        blocked_words.remove(word)
+        save_blocked_words(blocked_words)
+    return redirect(url_for('admin'))
+
+# Route untuk menghapus riwayat chat
+@app.route('/clear_chat_history')
+def clear_chat_history_route():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    clear_chat_history()
+    return redirect(url_for('admin'))
 
 # Route untuk login admin
 @app.route('/admin/login', methods=['GET', 'POST'])
