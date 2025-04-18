@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ planet.name }}{% endblock %}
+
+{% block content %}
+<div class="planet-detail">
+    <h1>{{ planet.name }}</h1>
+    <img src="{{ url_for('static', filename='img/' + planet.image) }}" alt="{{ planet.name }}" class="planet-img">
+    <p>{{ planet.desc }}</p>
+    <a href="/" class="back-link">← Kembali ke daftar</a>
+</div>
+{% endblock %}
