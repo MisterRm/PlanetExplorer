@@ -1,191 +1,86 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-import os
-import datetime
+from flask import Flask, render_template
 
 app = Flask(__name__)
-app.secret_key = '4Dayy'  # Kunci rahasia untuk session
 
-# Path untuk menyimpan riwayat interaksi dan kata kotor
-CHAT_HISTORY_PATH = os.path.join('data', 'chat_history.txt')
-BLOCKED_WORDS_PATH = os.path.join('data', 'blocked_words.txt')
+planets = [
+    {
+        "name": "Merkurius",
+        "image": "merkurius.jpg",
+        "desc": """
+        Merkurius adalah planet terkecil di tata surya dan terdekat dengan Matahari. 
+        Dengan diameter hanya 4.880 km, ia bahkan lebih kecil dari beberapa bulan planet lain.
+        Planet ini menyelesaikan orbitnya mengelilingi Matahari hanya dalam 88 hari Bumi,
+        tetapi satu hari di Merkurius (satu rotasi penuh) memakan waktu 59 hari Bumi.
+        Suhu permukaannya ekstrem: mencapai 430°C di siang hari dan -180°C di malam hari.
+        Permukaannya berbatu dan dipenuhi kawah akibat tabrakan meteor.
+        """,
+    },
+    {
+        "name": "Venus",
+        "image": "venus.jpg",
+        "desc": """
+        Venus, si "bintang kejora", adalah planet terpanas di tata surya dengan suhu permukaan 
+        mencapai 465°C—lebih panas daripada Merkurius! Atmosfernya tebal dan beracun, 
+        terdiri dari 96% karbon dioksida dengan awan asam sulfat. Tekanan di permukaannya 
+        92 kali lebih kuat daripada di Bumi. Venus berotasi sangat lambat: satu hari di Venus 
+        lebih panjang daripada satu tahunnya! Arah rotasinya juga terbalik (dari timur ke barat).
+        """,
+    },
+    {
+        "name": "Bumi",
+        "image": "bumi.jpg",
+        "desc": """
+        Bumi adalah planet ketiga dari Matahari dan satu-satunya yang diketahui mendukung kehidupan.
+        Permukaannya 70% tertutup air, dan atmosfernya kaya nitrogen serta oksigen.
+        Memiliki satelit alami besar bernama Bulan yang memengaruhi pasang surut laut.
+        Bumi menyelesaikan satu orbit dalam 365,25 hari (tahun tropis) dan berotasi setiap 24 jam.
+        Lapisan ozonnya melindungi kehidupan dari radiasi Matahari yang berbahaya.
+        """,
+    },
+    {
+        "name": "Mars",
+        "image": "mars.jpg",
+        "desc": """
+        Mars, si "planet merah", dijuluki demikian karena kandungan besi oksida di permukaannya.
+        Memiliki gunung tertinggi di tata surya (Olympus Mons) dan lembah terbesar (Valles Marineris).
+        Atmosfernya tipis dan dingin (-60°C rata-rata), dengan musim seperti Bumi.
+        Dua satelit alaminya, Phobos dan Deimos, berbentuk tidak beraturan seperti kentang.
+        Mars menjadi target utama eksplorasi manusia, dengan rencana misi berawak di masa depan.
+        """,
+    },
+    # Contoh planet lain (bisa ditambahkan):
+    {
+        "name": "Jupiter",
+        "image": "jupiter.jpg",
+        "desc": """
+        Jupiter adalah planet terbesar di tata surya, dengan volume 1.300 kali Bumi.
+        Terkenal dengan Bintik Merah Raksasa—badai raksasa yang telah berlangsung selama 400 tahun.
+        Memiliki 95 satelit alami, termasuk Ganymede (bulan terbesar di tata surya).
+        Atmosfernya terdiri dari hidrogen dan helium, dengan angin super kencang (600 km/jam).
+        Jupiter membantu melindungi Bumi dengan gravitasinya yang menyerap komet dan asteroid.
+        """,
+    }
+]
 
-# Fungsi untuk menyimpan riwayat interaksi
-def save_chat_history(user_name, user_input, bot_response):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(CHAT_HISTORY_PATH, 'a') as file:
-        file.write(f"{timestamp} - {user_name}: {user_input}\n")
-        file.write(f"{timestamp} - AI: {bot_response}\n\n")
-
-# Fungsi untuk membaca daftar kata kotor
-def load_blocked_words():
-    if os.path.exists(BLOCKED_WORDS_PATH):
-        with open(BLOCKED_WORDS_PATH, 'r') as file:
-            return file.read().splitlines()
-    return []
-
-# Fungsi untuk menyimpan daftar kata kotor
-def save_blocked_words(words):
-    with open(BLOCKED_WORDS_PATH, 'w') as file:
-        for word in words:
-            file.write(f"{word}\n")
-
-# Fungsi untuk membaca riwayat chat
-def load_chat_history():
-    if os.path.exists(CHAT_HISTORY_PATH):
-        with open(CHAT_HISTORY_PATH, 'r') as file:
-            return file.read()
-    return "Riwayat interaksi kosong."
-
-# Fungsi untuk menghapus riwayat chat
-def clear_chat_history():
-    with open(CHAT_HISTORY_PATH, 'w') as file:
-        file.write("")
-
-# Fungsi untuk memeriksa apakah input mengandung kata kotor
-def contains_blocked_words(text):
-    blocked_words = load_blocked_words()
-    text = text.lower()
-    for word in blocked_words:
-        if word.lower() in text:
-            return True
-    return False
-
-# Halaman utama
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template("index.html", planets=planets)
 
-# Memulai interaksi
-@app.route('/start', methods=['POST'])
-def start():
-    user_name = request.form['user_name']
-    session['user_name'] = user_name  # Simpan nama pengguna dalam session
-    session['last_question'] = None  # Reset konteks pertanyaan terakhir
-    return redirect(url_for('interaction'))
+@app.route('/planet/<name>')
+def planet(name):
+    planet_data = next((p for p in planets if p["name"].lower() == name.lower()), None)
+    if not planet_data:
+        return "Planet tidak ditemukan", 404
+    return render_template("planet.html", planet=planet_data)
 
-# Halaman interaksi
-@app.route('/interaction', methods=['GET', 'POST'])
-def interaction():
-    if request.method == 'POST':
-        user_input = request.form.get('user_input')
-        user_choice = request.form.get('user_choice')
-        user_name = session.get('user_name', 'Tamu')
+@app.route("/tentang")
+def tentang():
+    return render_template("tentang.html")
 
-        # Cek kata kotor
-        if user_input and contains_blocked_words(user_input):
-            bot_response = "Parah lu bro! Masa sama AI ngomong kasar."
-            save_chat_history(user_name, user_input, bot_response)
-            chat_history = load_chat_history()
-            return render_template('interaction.html', user_name=user_name, chat_history=chat_history, bot_response=bot_response)
+@app.route("/kontak")
+def kontak():
+    return render_template("kontak.html")
 
-        # Logika respons AI
-        if user_input:
-            last_question = session.get('last_question')
-            if last_question == "kabar":
-                bot_response = f"Wah, {user_input} ya? gw seneng banget denger itu!"
-            elif last_question == "hobi":
-                bot_response = f"Keren, {user_name}! {user_input} tuh hobi yang seru. aing juga suka belajar hal baru!"
-            else:
-                bot_response = "Maaf, gue ga ngerti nih. Coba pilih opsi lain, dong!"
-            session['last_question'] = None
-        else:
-            if user_choice == "nama":
-                bot_response = f"Hai, {user_name}! Nama gw Dayy. Seneng banget kenalan sama lu!"
-            elif user_choice == "kabar":
-                bot_response = "Gue baik-baik aja, nih! Lo gimana? Hari ini seru ga?"
-                session['last_question'] = "kabar"
-            elif user_choice == "hobi":
-                bot_response = "Gw suka banget belajar hal-hal baru dan ngobrol sama orang kaya lo. Lo sendiri, hobi lo apa?"
-                session['last_question'] = "hobi"
-            elif user_choice == "tentang":
-                bot_response = "Gw tuh AI yang dibuat khusus buat nemenin lu. Gw di sini buat bantu lu atau sekadar ngobrol santai. Ada yang bisa gue bantu?"
-            elif user_choice == "bye":
-                bot_response = f"Yah, udah mau pergi aja nih? Okay deh, {user_name}! Jangan lupa balik lagi ya. Gue tunggu!"
-            else:
-                bot_response = "Waduh, gue ga ngerti nih. Coba pilih opsi lain, dong!"
-
-        # Simpan riwayat interaksi
-        save_chat_history(user_name, user_input or user_choice, bot_response)
-
-        # Muat riwayat interaksi terbaru
-        chat_history = load_chat_history()
-
-        return render_template('interaction.html', user_name=user_name, chat_history=chat_history, bot_response=bot_response)
-
-    else:
-        # Handle GET request
-        user_name = session.get('user_name', 'Tamu')
-        chat_history = load_chat_history()
-        return render_template('interaction.html', user_name=user_name, chat_history=chat_history)
-
-# Route untuk halaman admin
-@app.route('/admin')
-def admin():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    blocked_words = load_blocked_words()
-    chat_history = load_chat_history()
-    return render_template('admin.html', blocked_words=blocked_words, chat_history=chat_history)
-
-# Route untuk menambah kata kotor
-@app.route('/add_blocked_word', methods=['POST'])
-def add_blocked_word():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    new_word = request.form.get('blocked_word')
-    if new_word:
-        blocked_words = load_blocked_words()
-        if new_word not in blocked_words:
-            blocked_words.append(new_word)
-            save_blocked_words(blocked_words)
-    return redirect(url_for('admin'))
-
-# Route untuk menghapus kata kotor
-@app.route('/delete_blocked_word/<word>')
-def delete_blocked_word(word):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    blocked_words = load_blocked_words()
-    if word in blocked_words:
-        blocked_words.remove(word)
-        save_blocked_words(blocked_words)
-    return redirect(url_for('admin'))
-
-# Route untuk menghapus riwayat chat
-@app.route('/clear_chat_history')
-def clear_chat_history_route():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    clear_chat_history()
-    return redirect(url_for('admin'))
-
-# Route untuk login admin
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        # Autentikasi sederhana
-        if username == 'kontol' and password == 'bapuk22':
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin'))
-        else:
-            return "Login gagal. Coba lagi."
-    
-    return render_template('admin_login.html')
-
-# Route untuk logout admin
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('index'))
-
-# Jalankan aplikasi
 if __name__ == '__main__':
     if not os.path.exists('data'):
         os.makedirs('data')
